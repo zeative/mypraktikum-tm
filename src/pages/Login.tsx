@@ -59,17 +59,13 @@ export default function Login() {
     
     try {
       if (isRegister) {
-        // Validate registration input
         const validated = registerSchema.parse({ email, password, nama, role, kelas: kelas || undefined });
         
         setIsLoading(true);
         await signUp(validated.email, validated.password, validated.nama, validated.role, validated.kelas);
-        
-        // Switch to login mode after successful registration
         setIsRegister(false);
         setPassword("");
       } else {
-        // Validate login input
         const validated = loginSchema.parse({ email, password });
         
         setIsLoading(true);
@@ -220,20 +216,6 @@ export default function Login() {
                 {isRegister ? "Sudah punya akun? Login" : "Belum punya akun? Daftar"}
               </Button>
             </div>
-            
-            {!isRegister && (
-              <div className="mt-6 space-y-2 rounded-lg bg-slate-50 dark:bg-slate-700/50 p-4 text-sm">
-                <p className="font-semibold text-slate-700 dark:text-slate-200">Akun Testing:</p>
-                <div className="space-y-1 text-slate-600 dark:text-slate-300">
-                  <p>
-                    <span className="font-medium">Guru:</span> guru.budi@sekolah.edu / GuruPass123
-                  </p>
-                  <p>
-                    <span className="font-medium">Murid:</span> murid.maya@sekolah.edu / MuridPass456
-                  </p>
-                </div>
-              </div>
-            )}
           </CardContent>
         </Card>
         

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Upload, Loader2, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Upload, Loader2, CheckCircle2, X } from "lucide-react";
 import { toast } from "sonner";
 
 const R_ITEMS = [
@@ -33,10 +33,63 @@ export default function LaporanForm() {
     rajin: { before: null, after: null },
   });
 
+  const [previewUrls, setPreviewUrls] = useState<{
+    [key: string]: { before: string | null; after: string | null };
+  }>({
+    ringkas: { before: null, after: null },
+    rapi: { before: null, after: null },
+    resik: { before: null, after: null },
+    rawat: { before: null, after: null },
+    rajin: { before: null, after: null },
+  });
+
+  useEffect(() => {
+    // Clean up preview URLs when component unmounts
+    return () => {
+      Object.values(previewUrls).forEach(photoSet => {
+        if (photoSet.before) URL.revokeObjectURL(photoSet.before);
+        if (photoSet.after) URL.revokeObjectURL(photoSet.after);
+      });
+    };
+  }, []);
+
   const handleFileChange = (rKey: string, type: "before" | "after", file: File | null) => {
+    // Revoke previous preview URL if exists
+    if (previewUrls[rKey][type]) {
+      URL.revokeObjectURL(previewUrls[rKey][type]!);
+    }
+
+    // Create new preview URL if file exists
+    let newPreviewUrl: string | null = null;
+    if (file) {
+      newPreviewUrl = URL.createObjectURL(file);
+    }
+
     setPhotos((prev) => ({
       ...prev,
       [rKey]: { ...prev[rKey], [type]: file },
+    }));
+
+    setPreviewUrls((prev) => ({
+      ...prev,
+      [rKey]: { ...prev[rKey], [type]: newPreviewUrl },
+    }));
+  };
+
+  const removeFile = (rKey: string, type: "before" | "after") => {
+    // Revoke preview URL if exists
+    if (previewUrls[rKey][type]) {
+      URL.revokeObjectURL(previewUrls[rKey][type]!);
+    }
+
+    setPhotos((prev) => ({
+      ...prev,
+      [rKey]: { ...prev[rKey], [type]: null },
+    }));
+
+    setPreviewUrls((prev) => ({
+      ...prev,
+      [rKey]: { ...prev[rKey], [type]: null },
     }));
   };
 
@@ -110,7 +163,7 @@ export default function LaporanForm() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 p-4 md:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800 p-4">
       <div className="container mx-auto max-w-4xl">
         <Button
           variant="ghost"
@@ -122,91 +175,152 @@ export default function LaporanForm() {
           Kembali
         </Button>
 
-        <Card className="shadow-lg">
-          <CardHeader>
-            <CardTitle>Form Laporan Praktikum 5R</CardTitle>
-            <CardDescription>
-              Upload foto Before dan After untuk setiap kategori 5R
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+        <Card className="border-0 bg-white/80 dark:bg-slate-800/90 shadow-xl backdrop-blur-sm overflow-hidden">
+          <div className="bg-gradient-to-r from-blue-500 to-indigo-600 p-1">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-white text-2xl">Form Laporan Praktikum 5R</CardTitle>
+              <CardDescription className="text-blue-100">
+                Upload foto Before dan After untuk setiap kategori 5R
+              </CardDescription>
+            </CardHeader>
+          </div>
+          <CardContent className="pt-6">
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Profile Info */}
-              <div className="grid gap-4 rounded-lg bg-muted p-4 md:grid-cols-2">
+              <div className="grid gap-4 rounded-xl bg-slate-50 dark:bg-slate-700/30 p-4 md:grid-cols-2 border border-slate-200 dark:border-slate-700">
                 <div>
-                  <Label className="text-sm text-muted-foreground">Nama</Label>
-                  <p className="font-semibold">{profile?.nama}</p>
+                  <Label className="text-sm text-slate-600 dark:text-slate-300">Nama</Label>
+                  <p className="font-semibold text-slate-800 dark:text-white">{profile?.nama}</p>
                 </div>
                 <div>
-                  <Label className="text-sm text-muted-foreground">Kelas</Label>
-                  <p className="font-semibold">{profile?.kelas || "-"}</p>
+                  <Label className="text-sm text-slate-600 dark:text-slate-300">Kelas</Label>
+                  <p className="font-semibold text-slate-800 dark:text-white">{profile?.kelas || "-"}</p>
                 </div>
               </div>
 
               {/* Photo Upload Sections */}
               {R_ITEMS.map((r) => (
-                <Card key={r.key} className="border-2">
-                  <CardHeader>
-                    <CardTitle className="flex items-center justify-between text-lg">
+                <Card key={r.key} className="border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 shadow-sm">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center justify-between text-lg text-slate-800 dark:text-white">
                       {r.label}
                       {uploadProgress[r.key] && (
-                        <CheckCircle2 className="h-5 w-5 text-accent" />
+                        <CheckCircle2 className="h-5 w-5 text-green-500" />
                       )}
                     </CardTitle>
-                    <CardDescription>{r.description}</CardDescription>
+                    <CardDescription className="text-slate-600 dark:text-slate-300">
+                      {r.description}
+                    </CardDescription>
                   </CardHeader>
-                  <CardContent className="grid gap-4 md:grid-cols-2">
-                    {/* Before Photo */}
-                    <div className="space-y-2">
-                      <Label htmlFor={`${r.key}-before`} className="flex items-center gap-2">
-                        <Upload className="h-4 w-4" />
-                        Foto Before
-                      </Label>
-                      <Input
-                        id={`${r.key}-before`}
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) =>
-                          handleFileChange(r.key, "before", e.target.files?.[0] || null)
-                        }
-                        disabled={isSubmitting}
-                        required
-                      />
-                      {photos[r.key].before && (
-                        <p className="text-xs text-muted-foreground">
-                          ✓ {photos[r.key].before!.name}
-                        </p>
-                      )}
-                    </div>
+                  <CardContent className="space-y-6">
+                    <div className="grid gap-6 md:grid-cols-2">
+                      {/* Before Photo */}
+                      <div className="space-y-2">
+                        <Label htmlFor={`${r.key}-before`} className="flex items-center gap-2 text-slate-700 dark:text-slate-200">
+                          <Upload className="h-4 w-4" />
+                          Foto Before
+                        </Label>
+                        
+                        {/* Preview Container */}
+                        {previewUrls[r.key].before ? (
+                          <div className="relative w-full h-48 rounded-lg overflow-hidden border border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-700/50 flex items-center justify-center">
+                            <img 
+                              src={previewUrls[r.key].before} 
+                              alt={`Preview Before ${r.label}`} 
+                              className="w-full h-full object-contain"
+                            />
+                            <Button
+                              type="button"
+                              size="icon"
+                              variant="destructive"
+                              className="absolute top-2 right-2 h-8 w-8 rounded-full"
+                              onClick={() => removeFile(r.key, "before")}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="w-full h-48 rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-700/30">
+                            <span className="text-center px-4">Upload foto before</span>
+                          </div>
+                        )}
+                        
+                        <Input
+                          id={`${r.key}-before`}
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) =>
+                            handleFileChange(r.key, "before", e.target.files?.[0] || null)
+                          }
+                          disabled={isSubmitting}
+                          className="mt-2"
+                        />
+                        {photos[r.key].before && (
+                          <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                            ✓ {photos[r.key].before!.name}
+                          </p>
+                        )}
+                      </div>
 
-                    {/* After Photo */}
-                    <div className="space-y-2">
-                      <Label htmlFor={`${r.key}-after`} className="flex items-center gap-2">
-                        <Upload className="h-4 w-4" />
-                        Foto After
-                      </Label>
-                      <Input
-                        id={`${r.key}-after`}
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) =>
-                          handleFileChange(r.key, "after", e.target.files?.[0] || null)
-                        }
-                        disabled={isSubmitting}
-                        required
-                      />
-                      {photos[r.key].after && (
-                        <p className="text-xs text-muted-foreground">
-                          ✓ {photos[r.key].after!.name}
-                        </p>
-                      )}
+                      {/* After Photo */}
+                      <div className="space-y-2">
+                        <Label htmlFor={`${r.key}-after`} className="flex items-center gap-2 text-slate-700 dark:text-slate-200">
+                          <Upload className="h-4 w-4" />
+                          Foto After
+                        </Label>
+                        
+                        {/* Preview Container */}
+                        {previewUrls[r.key].after ? (
+                          <div className="relative w-full h-48 rounded-lg overflow-hidden border border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-700/50 flex items-center justify-center">
+                            <img 
+                              src={previewUrls[r.key].after} 
+                              alt={`Preview After ${r.label}`} 
+                              className="w-full h-full object-contain"
+                            />
+                            <Button
+                              type="button"
+                              size="icon"
+                              variant="destructive"
+                              className="absolute top-2 right-2 h-8 w-8 rounded-full"
+                              onClick={() => removeFile(r.key, "after")}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="w-full h-48 rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-700/30">
+                            <span className="text-center px-4">Upload foto after</span>
+                          </div>
+                        )}
+                        
+                        <Input
+                          id={`${r.key}-after`}
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) =>
+                            handleFileChange(r.key, "after", e.target.files?.[0] || null)
+                          }
+                          disabled={isSubmitting}
+                          className="mt-2"
+                        />
+                        {photos[r.key].after && (
+                          <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                            ✓ {photos[r.key].after!.name}
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
               ))}
 
               {/* Submit Button */}
-              <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
+              <Button 
+                type="submit" 
+                size="lg" 
+                className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 h-12 text-base"
+                disabled={isSubmitting}
+              >
                 {isSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-5 w-5 animate-spin" />
