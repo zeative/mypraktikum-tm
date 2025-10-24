@@ -4,10 +4,29 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
-import { FileText, LogOut, User, Calendar, CheckCircle2, GraduationCap } from "lucide-react";
+import { 
+  FileText, 
+  LogOut, 
+  User, 
+  Calendar, 
+  CheckCircle2, 
+  GraduationCap,
+  Eye,
+  AlertCircle,
+  Clock
+} from "lucide-react";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
-import { ReportHistoryTable, StatsCard } from "@/components/ui/dashboard";
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { StatsCard } from "@/components/ui/dashboard";
 
 interface Report {
   id: string;
@@ -149,7 +168,7 @@ export default function MuridDashboard() {
             <Button 
               size="lg" 
               className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 h-12 text-base"
-              onClick={() => navigate("/murid/laporan")}
+              onClick={() => navigate("/murid/laporan/form")}
             >
               <FileText className="mr-2 h-5 w-5" />
               Kirim Laporan Praktikum Baru
@@ -158,10 +177,88 @@ export default function MuridDashboard() {
         </Card>
 
         {/* Report History */}
-        <ReportHistoryTable 
-          reports={reports} 
-          onRowClick={handleReportClick}
-        />
+        <Card className="shadow-md border-0 bg-white/80 dark:bg-slate-800/90 backdrop-blur-sm overflow-hidden">
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                Riwayat Laporan
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => navigate("/murid/laporan")}
+              >
+                Lihat Semua
+              </Button>
+            </CardTitle>
+            <CardDescription>Daftar laporan praktikum 5R yang telah Anda kirim</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {reports.length === 0 ? (
+              <div className="text-center py-8 text-slate-500 dark:text-slate-400">
+                <FileText className="h-12 w-12 mx-auto text-slate-300 dark:text-slate-600 mb-2" />
+                <p>Belum ada laporan yang dikirim</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Tanggal Kirim</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right\">Aksi</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {reports.slice(0, 5).map((report) => ( // Menampilkan hanya 5 laporan terbaru
+                      <TableRow 
+                        key={report.id} 
+                        className="cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50"
+                        onClick={() => handleReportClick(report)}
+                      >
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4 text-muted-foreground" />
+                            {format(new Date(report.tanggal_kirim), "dd MMM yyyy, HH:mm", {
+                              locale: id,
+                            })}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge 
+                            variant={report.status === "DITERIMA" ? "default" : 
+                                    report.status === "DIPROSES" ? "secondary" : 
+                                    "destructive"}
+                          >
+                            {report.status === "DITERIMA" ? (
+                              <>
+                                <CheckCircle2 className="mr-1 h-3 w-3" /> DITERIMA
+                              </>
+                            ) : report.status === "DIPROSES" ? (
+                              <>
+                                <Clock className="mr-1 h-3 w-3" /> DIPROSES
+                              </>
+                            ) : (
+                              <>
+                                <AlertCircle className="mr-1 h-3 w-3" /> DITOLAK
+                              </>
+                            )}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button variant="ghost" size="sm">
+                            <Eye className="h-4 w-4" /> Lihat
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
         
         <div className="mt-8 text-center text-sm text-slate-500 dark:text-slate-400">
           <p>© {new Date().getFullYear()} Sistem Laporan Praktikum 5R - Selalu jaga semangat belajar!</p>

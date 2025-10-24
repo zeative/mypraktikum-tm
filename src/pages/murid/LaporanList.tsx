@@ -1,39 +1,43 @@
 import { useEffect, useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Eye, Calendar, User as UserIcon, Clock, CheckCircle2, AlertCircle, Filter, FileText } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
+import { DateFilter } from "@/components/ui/date-filter";
+import { Badge } from "@/components/ui/badge";
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@/components/ui/table";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DateFilter } from "@/components/ui/date-filter";
+import { 
+  FileText, 
+  Calendar, 
+  CheckCircle2, 
+  Clock, 
+  AlertCircle,
+  Eye
+} from "lucide-react";
 
-interface ReportWithProfile {
+interface Report {
   id: string;
   tanggal_kirim: string;
   status: string;
-  profiles: {
-    nama: string;
-    kelas: string | null;
-  };
 }
 
-export default function GuruLaporanList() {
+export default function MuridLaporanList() {
+  const { profile } = useAuth();
   const navigate = useNavigate();
-  const [reports, setReports] = useState<ReportWithProfile[]>([]);
-  const [filteredReports, setFilteredReports] = useState<ReportWithProfile[]>([]);
+  const [reports, setReports] = useState<Report[]>([]);
+  const [filteredReports, setFilteredReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState<string>("semua");
   const [dateRange, setDateRange] = useState<{ startDate: string; endDate: string }>({ 
     startDate: "", 
     endDate: new Date().toISOString() 
@@ -41,49 +45,43 @@ export default function GuruLaporanList() {
 
   useEffect(() => {
     fetchReports();
-  }, [dateRange]);
+  }, [profile]);
 
   useEffect(() => {
-    // Apply both status and date filters
-    let result = reports;
-    
-    // Apply status filter
-    if (statusFilter !== "semua") {
-      result = result.filter(report => report.status === statusFilter);
-    }
-    
-    // Apply date filter if date range is specified
+    // Apply date filter
     if (dateRange.startDate && dateRange.endDate) {
-      result = result.filter(report => {
+      const filtered = reports.filter(report => {
         const reportDate = new Date(report.tanggal_kirim);
         const startDate = new Date(dateRange.startDate);
         const endDate = new Date(dateRange.endDate);
         return reportDate >= startDate && reportDate <= endDate;
       });
+      setFilteredReports(filtered);
+    } else {
+      // If no date range specified, show all reports
+      setFilteredReports(reports);
     }
-    
-    setFilteredReports(result);
-  }, [reports, statusFilter, dateRange]);
+  }, [reports, dateRange]);
 
   const fetchReports = async () => {
+    if (!profile) return;
+
     setLoading(true);
     const { data, error } = await supabase
       .from("reports")
-      .select(`
-        id,
-        tanggal_kirim,
-        status,
-        profiles:user_id (
-          nama,
-          kelas
-        )
-      `)
+      .select("*")
+      .eq("user_id", profile.id)
       .order("tanggal_kirim", { ascending: false });
 
     if (data && !error) {
-      setReports(data as any);
+      setReports(data);
     }
     setLoading(false);
+  };
+
+  const handleReportClick = (report: Report) => {
+    console.log("View report:", report);
+    // Navigasi ke halaman detail laporan jika sudah tersedia
   };
 
   const handleDateFilterChange = (startDate: string, endDate: string) => {
@@ -121,7 +119,7 @@ export default function GuruLaporanList() {
       <div className="container mx-auto max-w-6xl">
         <Button
           variant="ghost"
-          onClick={() => navigate("/guru/dashboard")}
+          onClick={() => navigate("/murid/dashboard")}
           className="mb-4"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
@@ -130,23 +128,8 @@ export default function GuruLaporanList() {
 
         <Card className="shadow-lg">
           <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <CardTitle>Daftar Laporan Praktikum Murid</CardTitle>
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-              <DateFilter onFilterChange={(startDate, endDate) => handleDateFilterChange(startDate, endDate)} />
-              <div className="flex items-center gap-3">
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Pilih status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="semua">Semua Status</SelectItem>
-                    <SelectItem value="DITERIMA">Diterima</SelectItem>
-                    <SelectItem value="DIPROSES">Diproses</SelectItem>
-                    <SelectItem value="DITOLAK">Ditolak</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+            <CardTitle>Riwayat Laporan Praktikum</CardTitle>
+            <DateFilter onFilterChange={handleDateFilterChange} />
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -156,15 +139,13 @@ export default function GuruLaporanList() {
             ) : filteredReports.length === 0 ? (
               <div className="text-center py-8">
                 <FileText className="h-12 w-12 mx-auto text-slate-300 dark:text-slate-600 mb-2" />
-                <p className="text-muted-foreground">Belum ada laporan {statusFilter !== "semua" ? statusFilter.toLowerCase() : ""}</p>
+                <p className="text-muted-foreground">Belum ada laporan</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Nama Murid</TableHead>
-                      <TableHead>Kelas</TableHead>
                       <TableHead>Tanggal Kirim</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead className="text-right">Aksi</TableHead>
@@ -172,14 +153,11 @@ export default function GuruLaporanList() {
                   </TableHeader>
                   <TableBody>
                     {filteredReports.map((report) => (
-                      <TableRow key={report.id}>
-                        <TableCell className="font-medium">
-                          <div className="flex items-center gap-2">
-                            <UserIcon className="h-4 w-4 text-muted-foreground" />
-                            {report.profiles.nama}
-                          </div>
-                        </TableCell>
-                        <TableCell>{report.profiles.kelas || "-"}</TableCell>
+                      <TableRow 
+                        key={report.id} 
+                        className="cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50"
+                        onClick={() => handleReportClick(report)}
+                      >
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -197,13 +175,9 @@ export default function GuruLaporanList() {
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => navigate(`/guru/laporan/${report.id}`)}
-                          >
+                          <Button variant="outline" size="sm">
                             <Eye className="mr-2 h-4 w-4" />
-                            Lihat Detail
+                            Lihat
                           </Button>
                         </TableCell>
                       </TableRow>

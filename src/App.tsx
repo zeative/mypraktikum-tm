@@ -10,6 +10,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Login from "./pages/Login";
 import MuridDashboard from "./pages/murid/Dashboard";
 import MuridLaporanForm from "./pages/murid/LaporanForm";
+import MuridLaporanList from "./pages/murid/LaporanList";
 import GuruDashboard from "./pages/guru/Dashboard";
 import GuruLaporanList from "./pages/guru/LaporanList";
 import GuruLaporanDetail from "./pages/guru/LaporanDetail";
@@ -38,6 +39,14 @@ const App = () => (
             />
             <Route
               path="/murid/laporan"
+              element={
+                <ProtectedRoute requiredRole="MURID">
+                  <MuridLaporanList />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/murid/laporan/form"
               element={
                 <ProtectedRoute requiredRole="MURID">
                   <MuridLaporanForm />
