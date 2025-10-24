@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { FileText, LogOut, User, Calendar, CheckCircle2, GraduationCap } from "lucide-react";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
+import { ReportHistoryTable, StatsCard } from "@/components/ui/dashboard";
 
 interface Report {
   id: string;
@@ -19,6 +20,7 @@ export default function MuridDashboard() {
   const navigate = useNavigate();
   const [latestReport, setLatestReport] = useState<Report | null>(null);
   const [totalReports, setTotalReports] = useState(0);
+  const [reports, setReports] = useState<Report[]>([]);
 
   useEffect(() => {
     fetchReports();
@@ -34,11 +36,18 @@ export default function MuridDashboard() {
       .order("tanggal_kirim", { ascending: false });
 
     if (data && !error) {
+      setReports(data);
       setTotalReports(data.length);
       if (data.length > 0) {
         setLatestReport(data[0]);
       }
     }
+  };
+
+  const handleReportClick = (report: Report) => {
+    // For now, we'll navigate to a view report page if it exists
+    // In a real implementation, you might want to show a modal or detailed view
+    console.log("View report:", report);
   };
 
   return (
@@ -64,60 +73,38 @@ export default function MuridDashboard() {
 
         {/* Info Cards */}
         <div className="mb-8 grid gap-5 md:grid-cols-1 lg:grid-cols-3">
-          <Card className="shadow-md border-0 bg-white/80 dark:bg-slate-800/90 backdrop-blur-sm">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-slate-700 dark:text-slate-200">Profil Saya</CardTitle>
-                <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30">
-                  <User className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-semibold text-slate-800 dark:text-white">{profile?.nama}</div>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Kelas: {profile?.kelas || "Tidak ada data"}</p>
-            </CardContent>
-          </Card>
+          <StatsCard
+            title="Profil Saya"
+            value={profile?.nama || "-"}
+            subtitle={`Kelas: ${profile?.kelas || "Tidak ada data"}`}
+            icon={<User className="h-4 w-4 text-blue-600 dark:text-blue-400" />}
+            iconBg="bg-blue-100 dark:bg-blue-900/30"
+            color="text-slate-800 dark:text-white"
+          />
 
-          <Card className="shadow-md border-0 bg-white/80 dark:bg-slate-800/90 backdrop-blur-sm">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-slate-700 dark:text-slate-200">Total Laporan</CardTitle>
-                <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/30">
-                  <FileText className="h-4 w-4 text-green-600 dark:text-green-400" />
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-semibold text-slate-800 dark:text-white">{totalReports}</div>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Laporan terkirim</p>
-            </CardContent>
-          </Card>
+          <StatsCard
+            title="Total Laporan"
+            value={totalReports}
+            subtitle="Laporan terkirim"
+            icon={<FileText className="h-4 w-4 text-green-600 dark:text-green-400" />}
+            iconBg="bg-green-100 dark:bg-green-900/30"
+            color="text-slate-800 dark:text-white"
+          />
 
-          <Card className="shadow-md border-0 bg-white/80 dark:bg-slate-800/90 backdrop-blur-sm">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-slate-700 dark:text-slate-200">Status Terakhir</CardTitle>
-                <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/30">
-                  <CheckCircle2 className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className={`text-2xl font-semibold ${latestReport && latestReport.status === 'DITERIMA' ? 'text-green-600 dark:text-green-400' : latestReport && latestReport.status === 'DIPROSES' ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400'}`}>
-                {latestReport ? latestReport.status : "-"}
-              </div>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                {latestReport
-                  ? format(new Date(latestReport.tanggal_kirim), "dd MMM yyyy", { locale: id })
-                  : "Belum ada laporan"}
-              </p>
-            </CardContent>
-          </Card>
+          <StatsCard
+            title="Status Terakhir"
+            value={latestReport ? latestReport.status : "-"}
+            subtitle={latestReport
+              ? format(new Date(latestReport.tanggal_kirim), "dd MMM yyyy", { locale: id })
+              : "Belum ada laporan"}
+            icon={<CheckCircle2 className={`h-4 w-4 ${latestReport && latestReport.status === 'DITERIMA' ? 'text-green-600 dark:text-green-400' : latestReport && latestReport.status === 'DIPROSES' ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400'}`} />}
+            iconBg={latestReport && latestReport.status === 'DITERIMA' ? 'bg-green-100 dark:bg-green-900/30' : latestReport && latestReport.status === 'DIPROSES' ? 'bg-yellow-100 dark:bg-yellow-900/30' : 'bg-red-100 dark:bg-red-900/30'}
+            color={latestReport && latestReport.status === 'DITERIMA' ? 'text-green-600 dark:text-green-400' : latestReport && latestReport.status === 'DIPROSES' ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400'}
+          />
         </div>
 
         {/* Main Action Card */}
-        <Card className="border-0 bg-white/80 dark:bg-slate-800/90 shadow-xl backdrop-blur-sm overflow-hidden">
+        <Card className="border-0 bg-white/80 dark:bg-slate-800/90 shadow-xl backdrop-blur-sm overflow-hidden mb-8">
           <div className="bg-gradient-to-r from-blue-500 to-indigo-600 p-1">
             <CardHeader className="pb-4">
               <CardTitle className="flex items-center gap-3 text-white">
@@ -169,6 +156,12 @@ export default function MuridDashboard() {
             </Button>
           </CardContent>
         </Card>
+
+        {/* Report History */}
+        <ReportHistoryTable 
+          reports={reports} 
+          onRowClick={handleReportClick}
+        />
         
         <div className="mt-8 text-center text-sm text-slate-500 dark:text-slate-400">
           <p>© {new Date().getFullYear()} Sistem Laporan Praktikum 5R - Selalu jaga semangat belajar!</p>

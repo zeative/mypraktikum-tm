@@ -5,15 +5,26 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { FileText, LogOut, Users, ClipboardList, Eye, GraduationCap } from "lucide-react";
+import { StudentListTable, StatsCard } from "@/components/ui/dashboard";
+
+interface Student {
+  id: string;
+  nama: string;
+  kelas: string | null;
+  email: string;
+  created_at: string;
+}
 
 export default function GuruDashboard() {
   const { profile, signOut } = useAuth();
   const navigate = useNavigate();
   const [totalReports, setTotalReports] = useState(0);
   const [totalStudents, setTotalStudents] = useState(0);
+  const [students, setStudents] = useState<Student[]>([]);
 
   useEffect(() => {
     fetchStats();
+    fetchStudents();
   }, []);
 
   const fetchStats = async () => {
@@ -30,6 +41,24 @@ export default function GuruDashboard() {
 
     setTotalReports(reportsCount || 0);
     setTotalStudents(studentsCount || 0);
+  };
+
+  const fetchStudents = async () => {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id, nama, kelas, email, created_at")
+      .eq("role", "MURID")
+      .order("created_at", { ascending: false });
+
+    if (data && !error) {
+      setStudents(data);
+    }
+  };
+
+  const handleStudentClick = (student: Student) => {
+    // For now, we'll just log the student clicked
+    // In a real implementation, you might navigate to a student detail page
+    console.log("View student:", student);
   };
 
   return (
@@ -55,39 +84,27 @@ export default function GuruDashboard() {
 
         {/* Stats Cards */}
         <div className="mb-8 grid gap-5 md:grid-cols-1 lg:grid-cols-2">
-          <Card className="shadow-md border-0 bg-white/80 dark:bg-slate-800/90 backdrop-blur-sm">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-slate-700 dark:text-slate-200">Total Murid</CardTitle>
-                <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30">
-                  <Users className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-semibold text-slate-800 dark:text-white">{totalStudents}</div>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Murid terdaftar</p>
-            </CardContent>
-          </Card>
+          <StatsCard
+            title="Total Murid"
+            value={totalStudents}
+            subtitle="Murid terdaftar"
+            icon={<Users className="h-4 w-4 text-blue-600 dark:text-blue-400" />}
+            iconBg="bg-blue-100 dark:bg-blue-900/30"
+            color="text-slate-800 dark:text-white"
+          />
 
-          <Card className="shadow-md border-0 bg-white/80 dark:bg-slate-800/90 backdrop-blur-sm">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-slate-700 dark:text-slate-200">Total Laporan</CardTitle>
-                <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/30">
-                  <FileText className="h-4 w-4 text-green-600 dark:text-green-400" />
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-semibold text-slate-800 dark:text-white">{totalReports}</div>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Laporan masuk</p>
-            </CardContent>
-          </Card>
+          <StatsCard
+            title="Total Laporan"
+            value={totalReports}
+            subtitle="Laporan masuk"
+            icon={<FileText className="h-4 w-4 text-green-600 dark:text-green-400" />}
+            iconBg="bg-green-100 dark:bg-green-900/30"
+            color="text-slate-800 dark:text-white"
+          />
         </div>
 
         {/* Main Action Card */}
-        <Card className="border-0 bg-white/80 dark:bg-slate-800/90 shadow-xl backdrop-blur-sm overflow-hidden">
+        <Card className="border-0 bg-white/80 dark:bg-slate-800/90 shadow-xl backdrop-blur-sm overflow-hidden mb-8">
           <div className="bg-gradient-to-r from-indigo-500 to-purple-600 p-1">
             <CardHeader className="pb-4">
               <CardTitle className="flex items-center gap-3 text-white">
@@ -118,6 +135,12 @@ export default function GuruDashboard() {
             </Button>
           </CardContent>
         </Card>
+
+        {/* Student List */}
+        <StudentListTable 
+          students={students} 
+          onRowClick={handleStudentClick}
+        />
         
         <div className="mt-8 text-center text-sm text-slate-500 dark:text-slate-400">
           <p>© {new Date().getFullYear()} Sistem Laporan Praktikum 5R - Membangun Generasi Disiplin dan Bertanggung Jawab</p>

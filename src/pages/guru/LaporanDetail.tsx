@@ -3,10 +3,12 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Calendar, User, Loader2 } from "lucide-react";
+import { ArrowLeft, Calendar, User, Loader2, FileText, CheckCircle2, Clock, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface ReportDetail {
   id: string;
@@ -41,6 +43,7 @@ export default function GuruLaporanDetail() {
   const navigate = useNavigate();
   const [report, setReport] = useState<ReportDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [newStatus, setNewStatus] = useState<string>("");
 
   useEffect(() => {
     if (reportId) {
@@ -64,8 +67,27 @@ export default function GuruLaporanDetail() {
 
     if (data && !error) {
       setReport(data as any);
+      setNewStatus(data.status);
     }
     setLoading(false);
+  };
+
+  const handleStatusChange = async (value: string) => {
+    if (!reportId) return;
+    
+    // Update status in the database
+    const { error } = await supabase
+      .from("reports")
+      .update({ status: value })
+      .eq("id", reportId);
+
+    if (!error) {
+      setNewStatus(value);
+      // Update local state
+      if (report) {
+        setReport({ ...report, status: value });
+      }
+    }
   };
 
   if (loading) {
@@ -84,6 +106,32 @@ export default function GuruLaporanDetail() {
     );
   }
 
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case "DITERIMA":
+        return <CheckCircle2 className="h-5 w-5 text-green-600" />;
+      case "DIPROSES":
+        return <Clock className="h-5 w-5 text-yellow-600" />;
+      case "DITOLAK":
+        return <AlertCircle className="h-5 w-5 text-red-600" />;
+      default:
+        return <AlertCircle className="h-5 w-5 text-gray-600" />;
+    }
+  };
+
+  const getStatusVariant = (status: string) => {
+    switch (status) {
+      case "DITERIMA":
+        return "default";
+      case "DIPROSES":
+        return "secondary";
+      case "DITOLAK":
+        return "destructive";
+      default:
+        return "outline";
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 p-4 md:p-8">
       <div className="container mx-auto max-w-6xl">
@@ -97,9 +145,37 @@ export default function GuruLaporanDetail() {
         </Button>
 
         {/* Report Header */}
-        <Card className="mb-6 shadow-lg">
+        <Card className="mb-6 shadow-lg border-0 bg-white/80 dark:bg-slate-800/90 backdrop-blur-sm">
           <CardHeader>
-            <CardTitle>Detail Laporan Praktikum 5R</CardTitle>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <CardTitle className="flex items-center gap-2 text-xl">
+                  <FileText className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                  Detail Laporan Praktikum 5R
+                </CardTitle>
+                <CardDescription>Laporan praktikum dari murid {report.profiles.nama}</CardDescription>
+              </div>
+              
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex items-center gap-2">
+                  {getStatusIcon(report.status)}
+                  <Badge variant={getStatusVariant(report.status)}>
+                    {report.status}
+                  </Badge>
+                </div>
+                
+                <Select value={newStatus} onValueChange={handleStatusChange}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Ubah status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="DIPROSES">Diproses</SelectItem>
+                    <SelectItem value="DITERIMA">Diterima</SelectItem>
+                    <SelectItem value="DITOLAK">Ditolak</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-4 md:grid-cols-3">
@@ -126,14 +202,10 @@ export default function GuruLaporanDetail() {
                 </div>
               </div>
             </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Status</p>
-              <Badge variant="secondary" className="mt-1">
-                {report.status}
-              </Badge>
-            </div>
           </CardContent>
         </Card>
+
+        <Separator className="my-6" />
 
         {/* Photos Grid */}
         <div className="space-y-6">
@@ -142,9 +214,9 @@ export default function GuruLaporanDetail() {
             const afterUrl = report[`${r.key}_after_url` as keyof ReportDetail] as string;
 
             return (
-              <Card key={r.key} className="shadow-lg">
+              <Card key={r.key} className="shadow-lg border-0 bg-white/80 dark:bg-slate-800/90 backdrop-blur-sm">
                 <CardHeader>
-                  <CardTitle>{r.label}</CardTitle>
+                  <CardTitle className="text-lg">{r.label}</CardTitle>
                   <CardDescription>{r.description}</CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -152,24 +224,38 @@ export default function GuruLaporanDetail() {
                     {/* Before Photo */}
                     <div className="space-y-2">
                       <h3 className="font-semibold text-sm">Foto Before</h3>
-                      <div className="overflow-hidden rounded-lg border-2 border-border bg-muted">
-                        <img
-                          src={beforeUrl}
-                          alt={`${r.label} Before`}
-                          className="h-auto w-full object-cover"
-                        />
+                      <div className="overflow-hidden rounded-lg border-2 border-border bg-muted aspect-[4/3] flex items-center justify-center">
+                        {beforeUrl ? (
+                          <img
+                            src={beforeUrl}
+                            alt={`${r.label} Before`}
+                            className="h-full w-full object-contain"
+                          />
+                        ) : (
+                          <div className="text-center p-4 text-muted-foreground">
+                            <FileText className="h-12 w-12 mx-auto mb-2" />
+                            <p>Foto tidak tersedia</p>
+                          </div>
+                        )}
                       </div>
                     </div>
 
                     {/* After Photo */}
                     <div className="space-y-2">
                       <h3 className="font-semibold text-sm">Foto After</h3>
-                      <div className="overflow-hidden rounded-lg border-2 border-accent bg-muted">
-                        <img
-                          src={afterUrl}
-                          alt={`${r.label} After`}
-                          className="h-auto w-full object-cover"
-                        />
+                      <div className="overflow-hidden rounded-lg border-2 border-accent bg-muted aspect-[4/3] flex items-center justify-center">
+                        {afterUrl ? (
+                          <img
+                            src={afterUrl}
+                            alt={`${r.label} After`}
+                            className="h-full w-full object-contain"
+                          />
+                        ) : (
+                          <div className="text-center p-4 text-muted-foreground">
+                            <FileText className="h-12 w-12 mx-auto mb-2" />
+                            <p>Foto tidak tersedia</p>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
