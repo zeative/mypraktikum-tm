@@ -91,150 +91,156 @@ export default function Login() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary/10 via-background to-accent/10 p-4">
-      <Card className="w-full max-w-md shadow-lg">
-        <CardHeader className="space-y-4 text-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-            <BookOpen className="h-8 w-8 text-primary" />
-          </div>
-          <div>
-            <CardTitle className="text-2xl font-bold">
-              {isRegister ? "Daftar Akun Baru" : "Laporan Praktikum 5R"}
-            </CardTitle>
-            <CardDescription className="mt-2">
-              {isRegister ? "Buat akun untuk mengakses sistem" : "Sistem Pelaporan Lab untuk Guru dan Murid"}
-            </CardDescription>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {isRegister && (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="nama">Nama Lengkap</Label>
-                  <Input
-                    id="nama"
-                    type="text"
-                    placeholder="Nama lengkap Anda"
-                    value={nama}
-                    onChange={(e) => setNama(e.target.value)}
-                    disabled={isLoading}
-                    className={errors.nama ? "border-destructive" : ""}
-                  />
-                  {errors.nama && (
-                    <p className="text-sm text-destructive">{errors.nama}</p>
-                  )}
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="role">Daftar Sebagai</Label>
-                  <Select value={role} onValueChange={(value: "GURU" | "MURID") => setRole(value)} disabled={isLoading}>
-                    <SelectTrigger className={errors.role ? "border-destructive" : ""}>
-                      <SelectValue placeholder="Pilih peran" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="MURID">Murid</SelectItem>
-                      <SelectItem value="GURU">Guru</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {errors.role && (
-                    <p className="text-sm text-destructive">{errors.role}</p>
-                  )}
-                </div>
-                
-                {role === "MURID" && (
+    <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800 p-4">
+      <div className="w-full max-w-md">
+        <Card className="shadow-xl border-0 bg-white/80 dark:bg-slate-800/90 backdrop-blur-sm">
+          <CardHeader className="space-y-4 text-center pb-4">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-indigo-600">
+              <BookOpen className="h-8 w-8 text-white" />
+            </div>
+            <div>
+              <CardTitle className="text-3xl font-semibold tracking-tight text-slate-800 dark:text-white">
+                {isRegister ? "Daftar Akun" : "Laporan Praktikum 5R"}
+              </CardTitle>
+              <CardDescription className="mt-2 text-slate-600 dark:text-slate-300">
+                {isRegister ? "Buat akun untuk mengakses sistem" : "Sistem Pelaporan Lab untuk Guru dan Murid"}
+              </CardDescription>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-5">
+              {isRegister && (
+                <>
                   <div className="space-y-2">
-                    <Label htmlFor="kelas">Kelas</Label>
+                    <Label htmlFor="nama" className="text-slate-700 dark:text-slate-200">Nama Lengkap</Label>
                     <Input
-                      id="kelas"
+                      id="nama"
                       type="text"
-                      placeholder="Contoh: X-A, XI IPA 1"
-                      value={kelas}
-                      onChange={(e) => setKelas(e.target.value)}
+                      placeholder="Nama lengkap Anda"
+                      value={nama}
+                      onChange={(e) => setNama(e.target.value)}
                       disabled={isLoading}
-                      className={errors.kelas ? "border-destructive" : ""}
+                      className={`h-11 ${errors.nama ? "border-destructive focus-visible:ring-destructive" : "focus-visible:ring-blue-500"}`}
                     />
-                    {errors.kelas && (
-                      <p className="text-sm text-destructive">{errors.kelas}</p>
+                    {errors.nama && (
+                      <p className="text-sm text-destructive">{errors.nama}</p>
                     )}
                   </div>
-                )}
-              </>
-            )}
-            
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="nama@sekolah.edu"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={isLoading}
-                className={errors.email ? "border-destructive" : ""}
-              />
-              {errors.email && (
-                <p className="text-sm text-destructive">{errors.email}</p>
-              )}
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={isLoading}
-                className={errors.password ? "border-destructive" : ""}
-              />
-              {errors.password && (
-                <p className="text-sm text-destructive">{errors.password}</p>
-              )}
-            </div>
-            
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Loading...
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="role" className="text-slate-700 dark:text-slate-200">Daftar Sebagai</Label>
+                    <Select value={role} onValueChange={(value: "GURU" | "MURID") => setRole(value)} disabled={isLoading}>
+                      <SelectTrigger className={`h-11 ${errors.role ? "border-destructive focus:ring-destructive" : "focus:ring-blue-500"}`}>
+                        <SelectValue placeholder="Pilih peran" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="MURID">Murid</SelectItem>
+                        <SelectItem value="GURU">Guru</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {errors.role && (
+                      <p className="text-sm text-destructive">{errors.role}</p>
+                    )}
+                  </div>
+                  
+                  {role === "MURID" && (
+                    <div className="space-y-2">
+                      <Label htmlFor="kelas" className="text-slate-700 dark:text-slate-200">Kelas</Label>
+                      <Input
+                        id="kelas"
+                        type="text"
+                        placeholder="Contoh: X-A, XI IPA 1"
+                        value={kelas}
+                        onChange={(e) => setKelas(e.target.value)}
+                        disabled={isLoading}
+                        className={`h-11 ${errors.kelas ? "border-destructive focus-visible:ring-destructive" : "focus-visible:ring-blue-500"}`}
+                      />
+                      {errors.kelas && (
+                        <p className="text-sm text-destructive">{errors.kelas}</p>
+                      )}
+                    </div>
+                  )}
                 </>
-              ) : (
-                isRegister ? "Daftar" : "Login"
               )}
-            </Button>
-          </form>
-          
-          <div className="mt-4 text-center">
-            <Button
-              variant="link"
-              onClick={() => {
-                setIsRegister(!isRegister);
-                setErrors({});
-              }}
-              disabled={isLoading}
-              className="text-sm"
-            >
-              {isRegister ? "Sudah punya akun? Login" : "Belum punya akun? Daftar"}
-            </Button>
-          </div>
-          
-          {!isRegister && (
-            <div className="mt-6 space-y-2 rounded-lg bg-muted p-4 text-sm">
-              <p className="font-semibold">Akun Testing:</p>
-              <div className="space-y-1">
-                <p className="text-muted-foreground">
-                  <strong>Guru:</strong> guru.budi@sekolah.edu / GuruPass123
-                </p>
-                <p className="text-muted-foreground">
-                  <strong>Murid:</strong> murid.maya@sekolah.edu / MuridPass456
-                </p>
+              
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-slate-700 dark:text-slate-200">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="nama@sekolah.edu"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={isLoading}
+                  className={`h-11 ${errors.email ? "border-destructive focus-visible:ring-destructive" : "focus-visible:ring-blue-500"}`}
+                />
+                {errors.email && (
+                  <p className="text-sm text-destructive">{errors.email}</p>
+                )}
               </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-slate-700 dark:text-slate-200">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={isLoading}
+                  className={`h-11 ${errors.password ? "border-destructive focus-visible:ring-destructive" : "focus-visible:ring-blue-500"}`}
+                />
+                {errors.password && (
+                  <p className="text-sm text-destructive">{errors.password}</p>
+                )}
+              </div>
+              
+              <Button type="submit" className="w-full h-11 text-base" disabled={isLoading}>
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Memproses...
+                  </>
+                ) : (
+                  isRegister ? "Daftar" : "Login"
+                )}
+              </Button>
+            </form>
+            
+            <div className="mt-6 text-center">
+              <Button
+                variant="link"
+                onClick={() => {
+                  setIsRegister(!isRegister);
+                  setErrors({});
+                }}
+                disabled={isLoading}
+                className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
+              >
+                {isRegister ? "Sudah punya akun? Login" : "Belum punya akun? Daftar"}
+              </Button>
             </div>
-          )}
-        </CardContent>
-      </Card>
+            
+            {!isRegister && (
+              <div className="mt-6 space-y-2 rounded-lg bg-slate-50 dark:bg-slate-700/50 p-4 text-sm">
+                <p className="font-semibold text-slate-700 dark:text-slate-200">Akun Testing:</p>
+                <div className="space-y-1 text-slate-600 dark:text-slate-300">
+                  <p>
+                    <span className="font-medium">Guru:</span> guru.budi@sekolah.edu / GuruPass123
+                  </p>
+                  <p>
+                    <span className="font-medium">Murid:</span> murid.maya@sekolah.edu / MuridPass456
+                  </p>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+        
+        <div className="mt-6 text-center text-xs text-slate-500 dark:text-slate-400">
+          <p>© {new Date().getFullYear()} Sistem Laporan Praktikum 5R. Hak Cipta Dilindungi.</p>
+        </div>
+      </div>
     </div>
   );
 }
